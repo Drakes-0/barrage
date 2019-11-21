@@ -1,5 +1,5 @@
 import { defaultBarrageOption, createCSSRules } from './config'
-import { injectCSS, nextTick } from './util'
+import { injectCSS, nextTick, multiBubble } from './util'
 
 class Barrage implements BarrageInterface {
     private el: HTMLElement
@@ -159,7 +159,7 @@ class Barrage implements BarrageInterface {
             }))
         } else {
             tracks.sort((a, b) => {
-                return a.id + a.count - b.id - b.count
+                return (a.count - b.count) || (a.id - b.id)
             })
         }
 
@@ -189,8 +189,6 @@ class Barrage implements BarrageInterface {
                             )
                         )
                     ) {
-                        tracksInfo[i].sailing = true
-                        trackCount > tracksInfo[i].related && (tracksInfo[i].related = trackCount)
                         targetTrack = i
                         break
                     }
@@ -199,10 +197,13 @@ class Barrage implements BarrageInterface {
                 }
 
                 void 0 === targetTrack && (targetTrack = backup || 0)// undefined || 0 || 0
+                tracksInfo[targetTrack].sailing = true
+                trackCount > tracksInfo[targetTrack].related && (tracksInfo[targetTrack].related = trackCount)
             } else {
-                targetTrack = tracks[(index - 1) % tl].id
+                targetTrack = tracks[0].id
                 const overflow = targetTrack + trackCount - tl
                 overflow > 0 && (targetTrack -= overflow)
+                index < ql && (tracks = multiBubble(tracks, trackCount))
             }
 
             let sailingTracks = originalTracks.slice(targetTrack, targetTrack + trackCount)
