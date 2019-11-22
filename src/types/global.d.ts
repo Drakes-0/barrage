@@ -47,8 +47,7 @@ interface ComputedQueueItem extends BulletQueueItem {
 
 interface BarrageInterface {
     init(): void
-    reset(option: BarrageOption): void
-    resize(): void
+    resize(height: number, width?: number): void
     shoot(bullets: BarrageBullet | Array<BarrageBullet>): void
     formatBullets(bullet: BarrageBullet, option: BarrageOption): BulletQueueItem
     flush(): void

@@ -1,5 +1,5 @@
 import { defaultBarrageOption, createCSSRules } from './config'
-import { injectCSS, nextTick, multiBubble } from './util'
+import { injectCSS, nextTick, createClip } from './util'
 
 class Barrage implements BarrageInterface {
     private el: HTMLElement
@@ -47,11 +47,7 @@ class Barrage implements BarrageInterface {
             (u, i) => ({ id: i, topOffset: i * trackHeight, count: 0, tail: 0, speed: 0, ts: 0 }))
     }
 
-    reset(option: BarrageOption) {
-
-    }
-
-    resize() {
+    resize(height: number, width: number = 0) {
 
     }
 
@@ -140,71 +136,15 @@ class Barrage implements BarrageInterface {
             return { quote, bullet, trackCount, topOffset, leftOffset, offsetWidth, speed }
         })
 
-        // computedQueue.sort((a, b) => a.trackCount - b.trackCount)
-
+        const clip = createClip(originalTracks, timestamp, elWidth, computedTracks)
         const ql = computedQueue.length
-        const tl = originalTracks.length
-
-        const shareMode = computedTracks > tl
         let index = 0
-        let tracks: Track[] = originalTracks.slice(0)
-        let tracksInfo: TrackInfo[]
-
-        if (!shareMode) {
-            tracksInfo = Array.from({ length: tl }, (v, i) => ({
-                id: i,
-                inAir: null,
-                sailing: false,
-                related: 0
-            }))
-        } else {
-            tracks.sort((a, b) => {
-                return (a.count - b.count) || (a.id - b.id)
-            })
-        }
 
         while (index < ql) {
             const queueItem = computedQueue[index++]
             let { quote, trackCount, offsetWidth, speed, topOffset, leftOffset } = queueItem
 
-            let targetTrack
-            if (!shareMode) {
-                let limit = tl - trackCount + 1
-                let backup
-                for (let i = 0; i < limit;) {
-                    if (tracksInfo[i].sailing) {
-                        i += tracksInfo[i].related
-                        continue
-                    }
-
-                    void 0 === backup && (backup = i)
-
-                    if (
-                        !tracks[i].count || (
-                            (
-                                tracksInfo[i].inAir === null && (tracksInfo[i].inAir = tracks[i].speed * (timestamp - tracks[i].ts) - tracks[i].tail),
-                                tracksInfo[i].inAir > 0
-                            ) && (
-                                tracks[i].speed >= queueItem.speed || tracksInfo[i].inAir >= elWidth * (1 - (tracks[i].speed / queueItem.speed))
-                            )
-                        )
-                    ) {
-                        targetTrack = i
-                        break
-                    }
-
-                    i++
-                }
-
-                void 0 === targetTrack && (targetTrack = backup || 0)// undefined || 0 || 0
-                tracksInfo[targetTrack].sailing = true
-                trackCount > tracksInfo[targetTrack].related && (tracksInfo[targetTrack].related = trackCount)
-            } else {
-                targetTrack = tracks[0].id
-                const overflow = targetTrack + trackCount - tl
-                overflow > 0 && (targetTrack -= overflow)
-                index < ql && (tracks = multiBubble(tracks, trackCount))
-            }
+            const targetTrack = clip.pop(trackCount, index < ql, speed)
 
             let sailingTracks = originalTracks.slice(targetTrack, targetTrack + trackCount)
 
