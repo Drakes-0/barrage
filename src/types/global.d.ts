@@ -66,8 +66,12 @@ interface Track {
 }
 
 interface TrackInfo {
-    id: number
     inAir: number | null
     sailing: boolean
     related: number
+}
+
+interface Clip {
+    mode: 'COLLISION' | 'SHARE'
+    pop(count: number, toBeContinue: boolean, speed?: number): number
 }
